@@ -60,6 +60,12 @@ public class MenuClickListener implements Listener {
             int slot = e.getRawSlot();
             if (slot < 0) return;
 
+            if (slot == 15) {
+                int page = parseConfirmPage(title);
+                plugin.getGui().openMainMenu(player, page);
+                return;
+            }
+
             if (slot == 11) {
                 var msg = plugin.getMessages();
 
@@ -115,18 +121,22 @@ public class MenuClickListener implements Listener {
                     return;
                 }
 
-                // выдаём предмет и удаляем лот
-                player.getInventory().addItem(lot.getItem());
+                var leftovers = player.getInventory().addItem(lot.getItem());
+                if (!leftovers.isEmpty()) {
+                    leftovers.values().forEach(st ->
+                            player.getWorld().dropItemNaturally(player.getLocation(), st)
+                    );
+                }
+
                 boolean removed = plugin.getService().removeLot(lot.getId());
 
                 if (removed) {
                     player.sendMessage(msg.withPrefix("buy-ok-buyer", Map.of("price", String.valueOf(price))));
-                    if (seller.isOnline()) {
-                        ((org.bukkit.entity.Player) seller).sendMessage(
+                    if (seller.isOnline() && seller.getPlayer() != null) {
+                        seller.getPlayer().sendMessage(
                                 msg.withPrefix("buy-ok-seller", Map.of("buyer", player.getName(), "price", String.valueOf(price)))
                         );
                     }
-                    // сразу сохраняем
                     try { plugin.getStorage().save(plugin.getService().getAll()); } catch (Exception ignored) {}
                 } else {
                     player.sendMessage(msg.withPrefix("buy-removed"));
