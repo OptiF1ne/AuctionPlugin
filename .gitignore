@@ -1,0 +1,11 @@
+
+.idea/
+*.iml
+
+out/
+target/
+
+*.log
+
+Thumbs.db
+.DS_Store
