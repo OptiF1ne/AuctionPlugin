@@ -7,7 +7,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 
 import java.util.Map;
 
@@ -27,7 +30,21 @@ public class MenuClickListener implements Listener {
         if (title != null && title.startsWith("Аукцион | стр.")) {
             int slot = e.getRawSlot();
             int topSize = e.getView().getTopInventory().getSize();
-            if (slot < 0 || slot >= topSize) return;
+
+            if (slot >= topSize) {
+                if (e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                        || e.getAction() == InventoryAction.HOTBAR_SWAP
+                        || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
+                        || e.getAction() == InventoryAction.COLLECT_TO_CURSOR
+                        || e.getClick() == ClickType.DOUBLE_CLICK
+                        || e.getClick() == ClickType.NUMBER_KEY
+                        || e.isShiftClick()) {
+                    e.setCancelled(true);
+                }
+                return;
+            }
+
+            if (slot < 0) return;
             e.setCancelled(true);
 
             if (slot == 45) {
@@ -36,6 +53,14 @@ public class MenuClickListener implements Listener {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     player.closeInventory();
                     plugin.getGui().openMainMenu(player, target);
+                });
+                return;
+            }
+            if (slot == 47) {
+                int page = parsePage(title);
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    player.closeInventory();
+                    plugin.getGui().openMyLots(player, 1);
                 });
                 return;
             }
@@ -73,7 +98,21 @@ public class MenuClickListener implements Listener {
         if (title != null && title.startsWith("Покупка лота")) {
             int slot = e.getRawSlot();
             int topSize = e.getView().getTopInventory().getSize();
-            if (slot < 0 || slot >= topSize) return;
+
+            if (slot >= topSize) {
+                if (e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                        || e.getAction() == InventoryAction.HOTBAR_SWAP
+                        || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
+                        || e.getAction() == InventoryAction.COLLECT_TO_CURSOR
+                        || e.getClick() == ClickType.DOUBLE_CLICK
+                        || e.getClick() == ClickType.NUMBER_KEY
+                        || e.isShiftClick()) {
+                    e.setCancelled(true);
+                }
+                return;
+            }
+
+            if (slot < 0) return;
             e.setCancelled(true);
 
             if (slot == 15) {
@@ -172,7 +211,21 @@ public class MenuClickListener implements Listener {
         if (title != null && title.startsWith("Ваш лот")) {
             int slot = e.getRawSlot();
             int topSize = e.getView().getTopInventory().getSize();
-            if (slot < 0 || slot >= topSize) return;
+
+            if (slot >= topSize) {
+                if (e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                        || e.getAction() == InventoryAction.HOTBAR_SWAP
+                        || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
+                        || e.getAction() == InventoryAction.COLLECT_TO_CURSOR
+                        || e.getClick() == ClickType.DOUBLE_CLICK
+                        || e.getClick() == ClickType.NUMBER_KEY
+                        || e.isShiftClick()) {
+                    e.setCancelled(true);
+                }
+                return;
+            }
+
+            if (slot < 0) return;
             e.setCancelled(true);
 
             if (slot == 15) { // Назад
@@ -234,6 +287,82 @@ public class MenuClickListener implements Listener {
                 return;
             }
         }
+
+        if (title != null && title.startsWith("Мои лоты")) {
+            int slot = e.getRawSlot();
+            int topSize = e.getView().getTopInventory().getSize();
+
+            if (slot >= topSize) {
+                if (e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                        || e.getAction() == InventoryAction.HOTBAR_SWAP
+                        || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
+                        || e.getAction() == InventoryAction.COLLECT_TO_CURSOR
+                        || e.getClick() == ClickType.DOUBLE_CLICK
+                        || e.getClick() == ClickType.NUMBER_KEY
+                        || e.isShiftClick()) {
+                    e.setCancelled(true);
+                }
+                return;
+            }
+
+            if (slot < 0) return;
+            e.setCancelled(true);
+
+            if (slot == 45) {
+                int current = parseMyPage(title);
+                int target = Math.max(1, current - 1);
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    player.closeInventory();
+                    plugin.getGui().openMyLots(player, target);
+                });
+                return;
+            }
+            if (slot == 49) {
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    player.closeInventory();
+                    plugin.getGui().openMainMenu(player, 1);
+                });
+                return;
+            }
+            if (slot == 53) {
+                int current = parseMyPage(title);
+                int target = current + 1;
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    player.closeInventory();
+                    plugin.getGui().openMyLots(player, target);
+                });
+                return;
+            }
+
+            if (slot >= 0 && slot <= 44 && e.getCurrentItem() != null && !e.getCurrentItem().getType().isAir()) {
+                int page = parseMyPage(title);
+
+                var allMine = plugin.getService().getAll().stream()
+                        .filter(l -> l.getOwner().equals(player.getUniqueId()))
+                        .toList();
+
+                int from = Math.max(0, (page - 1) * 45);
+                int to = Math.min(allMine.size(), from + 45);
+                if (from >= to) return;
+
+                var pageLots = allMine.subList(from, to);
+                if (slot >= pageLots.size()) return;
+
+                var lot = pageLots.get(slot);
+
+                plugin.getGui().setPending(player, lot.getId(), page);
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    player.closeInventory();
+                    new OwnerConfirmMenu(plugin, lot, page).open(player);
+                });
+            }
+            return;
+        }
+    }
+
+    private int parseMyPage(String title) {
+        try { return Integer.parseInt(title.replace("Мои лоты | стр. ", "").trim()); }
+        catch (Exception e) { return 1; }
     }
 
     private int parseOwnerPage(String title) {
@@ -256,6 +385,27 @@ public class MenuClickListener implements Listener {
             return Integer.parseInt(title.replace("Покупка лота | стр. ", "").trim());
         } catch (Exception e) {
             return 1;
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        String title = ChatColor.stripColor(e.getView().getTitle());
+        if (title == null) return;
+
+        if (!(title.startsWith("Аукцион | стр.")
+                || title.startsWith("Покупка лота")
+                || title.startsWith("Ваш лот")
+                || title.startsWith("Мои лоты"))) {
+            return;
+        }
+
+        int topSize = e.getView().getTopInventory().getSize();
+        for (int raw : e.getRawSlots()) {
+            if (raw < topSize) {
+                e.setCancelled(true);
+                return;
+            }
         }
     }
 }

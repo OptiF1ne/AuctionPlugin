@@ -46,6 +46,7 @@ public class AuctionMenu {
         }
 
         inv.setItem(45, button(Material.ARROW, "Прошлая страница"));
+        inv.setItem(47, button(Material.PLAYER_HEAD, "Мои лоты"));
         inv.setItem(49, button(Material.BARRIER, "Закрыть меню"));
         inv.setItem(53, button(Material.ARROW, "Следующая страница"));
     }

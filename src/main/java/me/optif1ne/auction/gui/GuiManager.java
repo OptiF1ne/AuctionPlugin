@@ -19,6 +19,10 @@ public class GuiManager {
         new AuctionMenu(plugin, page).open(player);
     }
 
+    public void openMyLots(Player player, int page) {
+        new MyLotsMenu(plugin, player.getUniqueId(), page).open(player);
+    }
+
     public static final class PendingConfirm {
         private final UUID lotId;
         private final int returnPage;
